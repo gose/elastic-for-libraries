@@ -90,4 +90,4 @@ Took 0.1170 ms
 
 ### Correlation Data
 
-We also recommend pulling in historical weather data for the location of the library.  This can be helpful to correlate inclement weather with circulation behavior.  The [OpenWeather](https://home.openweathermap.org/marketplace) project provides 40 years of hourly weather conditions for a nominal feel.  See the [Weather]() repository for direction on importing weather into Elastic.
+We also recommend pulling in historical weather data for the location of the library.  This can be helpful to correlate inclement weather with circulation behavior.  The [OpenWeather](https://home.openweathermap.org/marketplace) project provides 40 years of hourly weather conditions for a nominal feel.  See the [Elastic Weather](https://github.com/gose/elastic-weather) repository for directions on importing weather into Elastic.
