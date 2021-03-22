@@ -4,9 +4,9 @@
 
 Apollo by Biblionix is a popular Integrated Library System (ILS) for public libraries.  This script extracts the high-level data from an export of that system.  An administrator would download an export from Apollo, then run this script to extract the high-level relationships in the data, which will exclude any personal information (e.g., patron names, phone numbers, addresses, etc.). Once this script is run, several files will be written that contain the data necessary to view circulation behavior.  That data is then loaded into Elastic to search and analyze it.
 
-Based on the various [XML elements](ldif_038.xsd) that Apollo uses, we model the following JSON documents in Elasticsearch.  They are, with their corresponding Xpath & JSON export file, as follows:
+Based on the various [XML elements](ldif_038.xsd) that Apollo uses, we build equivalent JSON documents in Elasticsearch.  They are, with their corresponding Xpath & JSON export file, as follows:
 
-| Data Model | Apollo XML | Elastic JSON |
+| Data Source | Apollo XML | Elastic JSON |
 | ----------- | ----------- | ----------- |
 | Biblios | //biblio | data/biblios.json |
 | Patrons | //patron | data/patrons.json |
@@ -72,17 +72,20 @@ $ ./load.rb -n checkouts -s
 Getting cluster status ... green
 Took 0.1330 ms
 
-$ ./load.rb -n checkouts -d
-Deleting ...
-$ ./load.rb -n checkouts -c
-Creating ...
-$ ./load.rb -n checkouts -i
-Importing ...
-Batch 1 of 2244 ... done
-Batch 2 of 2244 ... done
-Batch 3 of 2244 ... done
-Batch 4 of 2244 ... done
-...
+```
+
+Then run an index for one of the data models:
+
+
+```
+$ ./load.rb -n checkouts -r
+Deleting index for patrons ...
+Creating index for patrons ...
+Importing patrons in batches of 100 ...
+[################################################] [47/47] [100.00%] [00:07] [00:00] [ 6.02/s]
+Getting cluster status ... green
+Took 0.1170 ms
+
 ```
 
 ### Correlation Data

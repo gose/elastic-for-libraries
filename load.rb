@@ -4,6 +4,7 @@ require 'colorize'
 require 'elasticsearch'
 require 'json'
 require 'openssl'
+require 'progress_bar'
 require 'slop'
 
 # 
@@ -35,6 +36,11 @@ end
 
 index = parsed[:name]
 
+if ENV['ELASTIC_HOST'] == nil
+  puts "Please create and source .env (see README)"
+  exit
+end
+
 client = Elasticsearch::Client.new(
   user: ENV['ELASTIC_USER'],
   password: ENV['ELASTIC_PASSWORD'],
@@ -43,42 +49,49 @@ client = Elasticsearch::Client.new(
   port: 9243)
 
 if parsed[:delete] || parsed[:reindex]
-  puts 'Deleting ...'
+  puts "Deleting index for #{parsed[:name]} ..."
   client.indices.delete index: index
 end
 
 if parsed[:create] || parsed[:reindex]
-  puts 'Creating ...'
-  client.indices.create index: index,
-    body: {
-      settings: {
-        number_of_shards: 1,
-        number_of_replicas: 1,
-        refresh_interval: "10s"
-      },
-      mappings: {
-        dynamic: "true",
-        properties: {
-#           "holding.biblio.copyright": {
-#             type: "date"
-#           },
-#           "holding.biblio.num_pages": {
-#             type: "keyword"
-#           }
+  puts "Creating index for #{parsed[:name]} ..."
+  # General settings & mappings
+  settings = {
+    number_of_shards: 1,
+    number_of_replicas: 1,
+    refresh_interval: "1s"
+  }
+  mappings = {
+    dynamic: "true",
+    properties: { }
+  }
+  # Custom settings & mappings
+  if parsed[:name] == "biblios"
+    mappings = {
+      dynamic: "true",
+      properties: {
+        "usage_count": {
+          type: "integer"
         }
       }
     }
+  end
+  client.indices.create(index: index,
+    body: {
+      settings: settings,
+      mappings: mappings
+    })
 end
 
 if parsed[:index] || parsed[:reindex]
-  puts 'Importing ...'
+  puts "Importing #{parsed[:name]} in batches of 100 ..."
 
   file = File.read("data/#{index}.json")
   data = JSON.parse(file)
 
-  i = 0
+  bar = ProgressBar.new(data.count/100)
+
   data.each_slice(100) do |group|
-    i += 1
     batch_for_bulk = []
     group.each do |d|
       batch_for_bulk.push({ index: { _index: index } }.to_json)
@@ -88,11 +101,10 @@ if parsed[:index] || parsed[:reindex]
       index: index,
       body: batch_for_bulk
     )
-    puts "Batch #{i} of #{data.count/100} ... done"
     #puts JSON.pretty_generate(results)
     #exit
+    bar.increment!
   end
-
 end
 
 if parsed[:status] || parsed[:reindex]

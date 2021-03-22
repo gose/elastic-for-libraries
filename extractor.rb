@@ -18,7 +18,7 @@ rescue => e
   exit
 end
 
-print "Reading export ... "
+print "Reading #{parsed[:file]} ... "
 starting = Time.now
 
 doc = File.open(parsed[:file]) { |f| Nokogiri::XML(f) }
@@ -36,6 +36,14 @@ doc.xpath('//holdingMembership').each do |m|
 end
 
 #
+# Datetimes are stored in the libraries local time (and they're not in ISO 8601 format).
+# We'll need to convert any datetimes to UTC and rewrite them in ISO 8601 format.
+#
+# Specify the timezone of the library's local time here:
+#
+tz = TZInfo::Timezone.get('America/New_York')
+
+#
 # Biblios
 #
 print "Extracting //biblio to data/biblios.json ... "
@@ -49,10 +57,19 @@ doc.xpath('//biblio').each do |p|
   else
     biblio['id'] = 'B' + SecureRandom.hex(4) 
   end
-
-  biblio['added'] = p['added']
-  biblio['edited'] = p['edited']
-  biblio['usage_count'] = p['usageCount']
+  if p['added']
+    t = DateTime.iso8601(p['added'])
+    biblio['added'] = tz.local_to_utc(t).iso8601
+  end
+  if p['edited']
+    t = DateTime.iso8601(p['edited'])
+    biblio['edited'] = tz.local_to_utc(t).iso8601
+  end
+  if p['deleted']
+    t = DateTime.iso8601(p['deleted'])
+    biblio['deleted'] = tz.local_to_utc(t).iso8601
+  end
+  biblio['usage_count'] = p['usageCount'].to_i
   biblio['status'] = p['status']
 
   p.xpath('marc:record/marc:controlfield').each do |cf|
@@ -91,12 +108,13 @@ doc.xpath('//biblio').each do |p|
     elsif df['tag'] == '264'
       df.xpath('marc:subfield').each do |sf|
         biblio['publication'] = sf.content if sf['code'] == 'a'
-        biblio['copyright'] = sf.content.gsub(/[^0-9]/, '')[0..3] if sf['code'] == 'c'
+        biblio['copyright'] = sf.content.gsub(/[^0-9]/, '')[0..3].to_i if sf['code'] == 'c'
       end
     elsif df['tag'] == '300'
       df.xpath('marc:subfield').each do |sf|
         if sf['code'] == 'a'
-          biblio['num_pages'] = sf.content.gsub(/[^0-9]/, '').to_i
+          pages = sf.content.gsub(/[^0-9]/, '').to_i
+          biblio['num_pages'] = pages if pages > 0 && pages < 1000
         end
       end
     end
@@ -135,10 +153,22 @@ doc.xpath('//patron').each do |p|
   end
 
   patron['usage_count'] = p['usageCount']
-  patron['edited'] = p['edited']
-  patron['expiration'] = p['expiration']
-  patron['latest_activity'] = p['latestActivity']
-  patron['created'] = p['created']
+  if p['edited']
+    t = DateTime.iso8601(p['edited'])
+    patron['edited'] = tz.local_to_utc(t).iso8601
+  end
+  if p['expiration']
+    t = DateTime.iso8601(p['expiration'])
+    patron['expiration'] = tz.local_to_utc(t).iso8601
+  end
+  if p['latest_activity']
+    t = DateTime.iso8601(p['latest_activity'])
+    patron['latest_activity'] = tz.local_to_utc(t).iso8601
+  end
+  if p['created']
+    t = DateTime.iso8601(p['created'])
+    patron['created'] = tz.local_to_utc(t).iso8601
+  end
   p.xpath('membership').each do |mb|
     patron['membership'] = memberships[mb.content] 
   end
@@ -171,7 +201,10 @@ doc.xpath('//patron').each do |p|
     fine['amount_cents'] = fn['amountCents']
     fine['status'] = fn['status']
     fine['amount_paid_cents'] = fn['amountPaidCents']
-    fine['returned'] = fn['returned']
+    if fn['returned']
+      t = DateTime.iso8601(fn['returned'])
+      fine['returned'] = tz.local_to_utc(t).iso8601
+    end
     fine['patron'] = patron['id']
     fine['membership'] = patron['membership']
     fines << fine
@@ -182,8 +215,14 @@ doc.xpath('//patron').each do |p|
     reserves_count += 1
     reserve = {}
     reserve['status'] = rs['status']
-    reserve['placed'] = rs['placed']
-    reserve['resolved'] = rs['resolved']
+    if rs['placed']
+      t = DateTime.iso8601(rs['placed'])
+      reserve['placed'] = tz.local_to_utc(t).iso8601
+    end
+    if rs['resolved']
+      t = DateTime.iso8601(rs['resolved'])
+      reserve['resolved'] = tz.local_to_utc(t).iso8601
+    end
     reserve['biblio'] = biblios[rs['biblio']]['id']
     reserve['patron'] = patron['id']
     reserve['membership'] = patron['membership']
@@ -233,15 +272,24 @@ doc.xpath('//holding').each do |p|
   end
 
   holding['deleted_type'] = p['deletedType']
-  holding['usage_count'] = p['usageCount']
+  holding['usage_count'] = p['usageCount'].to_i
   holding['status'] = p['status']
   holding['call'] = p['call']
-  holding['added'] = p['added']
-  holding['edited'] = p['edited']
-  holding['deleted'] = p['deleted']
+  if p['added']
+    t = DateTime.iso8601(p['added'])
+    holding['added'] = tz.local_to_utc(t).iso8601
+  end
+  if p['edited']
+    t = DateTime.iso8601(p['edited'])
+    holding['edited'] = tz.local_to_utc(t).iso8601
+  end
+  if p['deleted']
+    t = DateTime.iso8601(p['deleted'])
+    holding['deleted'] = tz.local_to_utc(t).iso8601
+  end
   holding['barcode'] = p['barcode']
-  holding['price_list_cents'] = p['priceListCents']
-  holding['price_cents'] = p['priceCents']
+  holding['price_list_cents'] = p['priceListCents'].to_i
+  holding['price_cents'] = p['priceCents'].to_i
   holding['membership'] = []
   holding['category'] = []
   holding['is_dvd'] = false
@@ -273,17 +321,10 @@ end
 # Checkouts
 #
 print "Extracting //checkout to data/checkouts.json ... "
-tz = TZInfo::Timezone.get('America/New_York')
 checkouts = {}
 doc.xpath('//checkout').each do |d|
   checkout = {}
-  if d['out'] == nil
-    puts "Checkout #{d['id']} has no out"
-    exit
-  end
-  t = DateTime.iso8601(d['out'])
-  checkout['out'] = tz.local_to_utc(t).iso8601
-  # Checkouts are stamped 'out' in the libraries local time (not in ISO 8601 format).
+  checkout['type'] = d['type']
   # We need to test to see if we're converting the local time to UTC and obeying DST.
   #next unless d['out'] == "2020-01-14T09:48:05"
   #next unless d['out'] == "2020-06-29T19:32:27"
@@ -301,12 +342,29 @@ doc.xpath('//checkout').each do |d|
   # Time 2020-06-29T19:32:27 is: 2020-06-29 23:32:27 UTC
   # Time 2020-06-29T19:32:27 is: 2020-06-29 19:32:27 EDT <<<<<< It detects EDT
   # Time 2020-06-29T19:32:27 is: 2020-06-29T23:32:27Z
-  checkout['out_day_of_week'] = Date.iso8601(d['out']).strftime("%A") if d['out']
-  checkout['type'] = d['type']
-  checkout['due'] = d['due']
-  checkout['due_day_of_week'] = Date.iso8601(d['due']).strftime("%A") if d['due']
+  if d['out']
+    t = DateTime.iso8601(d['out'])
+    checkout['out'] = tz.local_to_utc(t).iso8601
+    checkout['out_day_of_week'] = Date.iso8601(d['out']).strftime("%A") if d['out']
+  else
+    puts "Checkout #{d['id']} has no out"
+    exit
+  end
+  if d['due']
+    t = DateTime.iso8601(d['due'])
+    checkout['due'] = tz.local_to_utc(t).iso8601
+    checkout['due_day_of_week'] = Date.iso8601(checkout['due']).strftime("%A")
+  end
+  if d['due']
+    t = DateTime.iso8601(d['due'])
+    checkout['due'] = tz.local_to_utc(t).iso8601
+    checkout['due_day_of_week'] = Date.iso8601(checkout['due']).strftime("%A")
+  end
   checkout['status'] = d['status']
-  checkout['returned'] = d['returned']
+  if d['returned']
+    t = DateTime.iso8601(d['returned'])
+    checkout['returned'] = tz.local_to_utc(t).iso8601
+  end
   if patrons.key?(d['patron'])
     checkout['patron'] = patrons[d['patron']]
   else
