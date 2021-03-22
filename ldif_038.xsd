@@ -1,0 +1,1621 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:marc="http://www.loc.gov/MARC21/slim"
+           xmlns:ldif="http://biblionix.com/ldif"
+           targetNamespace="http://biblionix.com/ldif"
+           elementFormDefault="unqualified"
+           attributeFormDefault="unqualified"
+           version="038">
+<xs:annotation><xs:documentation> 
+  This targetNamespace is very temporary!
+  We want to use ldif.org or similar, once the name is finalized.
+</xs:documentation></xs:annotation>
+
+
+<xs:annotation><xs:documentation>
+    October 10, 2020 - Xan Charbonnet, Biblionix
+    Version 038 of the standard currently known as "LDIF".
+    This schema describes how to express ILS data in XML.
+
+    Notes:
+    * Fields containing times should never specify a
+      timezone.  All times are local time for the library.
+
+
+    Changes from version 037:
+    * Added "associatedProblem" to "problem".
+    * Added "continuation" to "fine".
+
+    Changes from version 036:
+    * Add "quarantine" as a checkout type
+    * Add "checkoutReceiptContact" element to "patron"
+    * Add the concept of "previousBarcodes" attached to "patron"
+    * Add "alertOnEvent" to "holdingNote"
+
+    Changes from version 035:
+    * Add "signupLocation" as an attribute of "patron"
+
+    Changes from version 034:
+    * Add "description" as an attribute of "booklist"
+
+    Changes from version 033:
+    * Add "circHistoryDays" as an attribute of "patron"
+
+    Changes from version 032:
+    * Add "note" as an attribute of "address", "email", and "phone"
+
+    Changes from version 031:
+    * Add "membership" as a type of problem
+
+    Changes from version 030:
+    * Make the "status" attribute of biblios and holdings optional,
+      with a default to "active"
+    * Added a "status" attribute to patron
+
+    Changes from version 029:
+    * Added many attributes to branch locations.
+
+    Changes from version 028:
+    * Added "nameSuffix" to patron, "middleName" and "preferredName" to firstName
+
+    Changes from version 027:
+    * Updated email regex - we were rejecting some rare but valid addresses
+    
+    Changes from version 026:
+    * Added "salutation" parameter to patrons
+
+    Changes from version 025:
+    * Added "cost" parameter to passwords
+    
+    Changes from version 024:
+    * Due "dates" are now dateTime timestamps rather than dates
+    * Added constraints via xs:unique and xs:keyref
+    
+    Changes from version 023:
+    * Added a "ldif:contactSelection" element type and used it multiple places
+
+    Changes from version 022:
+    * Added a "public" option for holdingNotes
+
+    Changes from version 021:
+    * Added an "urgent" option for holdingNotes
+    
+    Changes from version 020:
+    * Added "temporary" to biblios
+    
+    Changes from version 019:
+    * Added "issue" to holdings
+    
+    Changes from version 018:
+    * Added preferredLocation to patrons
+    * Allowed zero-length patron memberships
+    * Removed the simple "password" attribute in favor of hashes, salts, etc
+    * Added "booklists"
+    
+    Changes from version 017:
+    * Renewals can now include the previous due date
+
+    Changes from version 016:
+    * Copy and volume fields added for holdings
+    * Call suffix for holdings added
+    * Added regular expressions for the ILS to map call numbers to material types
+    * Reserve "placed" and "resolved" now dateTime instead of date
+    * Added "latest activity" attribute for patrons
+
+    Changes from version 015:
+    * holidays element no longer requires at least one date
+
+    Changes from version 014:
+    * Added support for patron password
+    * Added support for custom fields ("userdefs") for patrons
+      and holdings
+
+    Changes from version 013:
+    * Added an "urgent" option for patronNotes
+    * Removed the "require"ment for a number of fields
+    * Changed amountPaidCents in fines to default "0" rather
+      than required
+
+    Changes from version 012:
+    * Support for multiple branches
+    * Added SMS email address to phones
+    * Internationalized addresses
+
+    Changes from version 011:
+    * Give the full external URL in MARC XML's schemaLocation
+    * Remove the bitmask for days of the week closed in favor
+      of a more XML-like solution
+
+    Changes from version 010:
+    * Added documentation
+    * Added the system element for describing the software
+      that generated a document
+    * Added a way to represent days of the week the library
+      is closed
+    * Internationalized phone numbers
+    * Converted from base64-encoded MARC to MARC in XML,
+      referring to the official LoC MARC XML schema
+    * Added support for authorities, via the same MARC in XML
+      schema
+    * Changed "types" (eg, holdingTypeLists) to "memberships"
+      (eg holdingMembershipLists)
+    * Removed the concept of "age" in favor of a
+      patronTypeMembership
+    * Replaced patronType and holdingType from checkouts
+      with a reference to applicable membershipLists
+    * Swapped the order of holdingMembershipLists and
+      patronMembershipLists (only because it's easier to
+      explain the holding version in the inline documentation)
+    * Removed cardRenewals (didn't seem worth the trouble)
+    * Simplified purchaseRequests
+    * Moved reserves inside of patrons
+    * A few other minor housekeeping things
+</xs:documentation></xs:annotation>
+
+
+<xs:import
+    namespace="http://www.loc.gov/MARC21/slim"
+    schemaLocation="https://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd"/>
+
+<xs:element name="library">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element name="system" type="ldif:system"/>
+            <xs:element name="userdefs" type="ldif:userdefs" minOccurs="0"/>
+            <xs:element name="locations" type="ldif:locations" minOccurs="0"/>
+            <xs:element name="holidays" type="ldif:holidays" minOccurs="0"/>
+            <xs:element name="holdingMembershipLists" type="ldif:holdingMembershipLists" minOccurs="0"/>
+            <xs:element name="patronMembershipLists" type="ldif:patronMembershipLists" minOccurs="0"/>
+            <xs:element name="patrons" type="ldif:patrons" minOccurs="0"/>
+            <xs:element name="authorities" type="ldif:authorities" minOccurs="0"/>
+            <xs:element name="biblios" type="ldif:biblios" minOccurs="0"/>
+            <xs:element name="holdings" type="ldif:holdings" minOccurs="0"/>
+            <xs:element name="problems" type="ldif:problems" minOccurs="0"/>
+            <xs:element name="inventories" type="ldif:inventories" minOccurs="0"/>
+            <xs:element name="checkouts" type="ldif:checkouts" minOccurs="0"/>
+            <xs:element name="booklists" type="ldif:booklists" minOccurs="0"/>
+      </xs:sequence>
+        <xs:attribute name="version" type="xs:nonNegativeInteger" use="required">
+            <xs:annotation><xs:documentation>
+                The "version" attribute is the version of the LDIF
+                spec to which the document conforms.
+            </xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="name" type="xs:token" use="required">
+            <xs:annotation><xs:documentation>
+                The name of the entity whose data this is.
+            </xs:documentation></xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    
+    <xs:unique name="userdefUnique">
+        <xs:selector xpath="userdefs/userdef"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="locationUnique">
+        <xs:selector xpath="locations/location"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+<!-- We /could/ constrain holiday dates for uniqueness, but (I think) that
+     would require recasting the dates as attributes of another element,
+     which is too much compatibility breakage (and work) for very little
+    payoff.  There really isn't any ambiguity when a date is listed twice. -->
+    <xs:unique name="holdingMembershipListUnique">
+        <xs:selector xpath="holdingMembershipLists/holdingMembershipList"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="holdingMembershipUnique">
+        <xs:selector xpath="holdingMembershipLists/holdingMembershipList/holdingMembership"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="patronMembershipListUnique">
+        <xs:selector xpath="patronMembershipLists/patronMembershipList"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="patronMembershipUnique">
+        <xs:selector xpath="patronMembershipLists/patronMembershipList/patronMembership"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="patronUnique">
+        <xs:selector xpath="patrons/patron"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="patronPhoneUnique">
+        <xs:selector xpath="patrons/patron/phones/phone"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="patronEmailUnique">
+        <xs:selector xpath="patrons/patron/emails/email"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="patronReserveUnique">
+        <xs:selector xpath="patrons/patron/reserves/reserve"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="patronFineUnique">
+        <xs:selector xpath="patrons/patron/fines/fine"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="biblioUnique">
+        <xs:selector xpath="biblios/biblio"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="holdingUnique">
+        <xs:selector xpath="holdings/holding"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="checkoutUnique">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="problemUnique">
+        <xs:selector xpath="problems/problem"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    <xs:unique name="booklistUnique">
+        <xs:selector xpath="booklists/booklist"/>
+        <xs:field xpath="@id"/>
+    </xs:unique>
+    
+    <!-- TODO: membership (patron, holding, firstName, checkout, inventory) referential integrity -->
+    <!-- TODO: userdefs -->
+    
+    <xs:key name="biblio">
+        <xs:selector xpath="biblios/biblio"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="holding">
+        <xs:selector xpath="holdings/holding"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="location">
+        <xs:selector xpath="locations/location"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="checkout">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="problem">
+        <xs:selector xpath="problems/problem"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="patron">
+        <xs:selector xpath="patrons/patron"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="reserve">
+        <xs:selector xpath="patrons/patron/reserves/reserve"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    <xs:key name="fine">
+        <xs:selector xpath="patrons/patron/fines/fine"/>
+        <xs:field xpath="@id"/>
+    </xs:key>
+    
+    <xs:keyref name="patronSignupLocation" refer="ldif:location">
+        <xs:selector xpath="patrons/patron"/>
+        <xs:field xpath="@signupLocation"/>
+    </xs:keyref>
+    <xs:keyref name="reserveBiblio" refer="ldif:biblio">
+        <xs:selector xpath="patrons/patron/reserves/reserve"/>
+        <xs:field xpath="@biblio"/>
+    </xs:keyref>
+    <xs:keyref name="reserveHolding" refer="ldif:holding">
+        <xs:selector xpath="patrons/patron/reserves/reserve"/>
+        <xs:field xpath="@holding"/>
+    </xs:keyref>
+    <xs:keyref name="reservePickupLocation" refer="ldif:location">
+        <xs:selector xpath="patrons/patron/reserves/reserve"/>
+        <xs:field xpath="@pickupLocation"/>
+    </xs:keyref>
+    <xs:keyref name="wishListItemBiblio" refer="ldif:biblio">
+        <xs:selector xpath="patrons/patron/wishList/wishListItem"/>
+        <xs:field xpath="@biblio"/>
+    </xs:keyref>
+    <xs:keyref name="wishListItemHolding" refer="ldif:holding">
+        <xs:selector xpath="patrons/patron/wishList/wishListItem"/>
+        <xs:field xpath="@holding"/>
+    </xs:keyref>
+    <xs:keyref name="fineCheckout" refer="ldif:checkout">
+        <xs:selector xpath="patrons/patron/fines/fine"/>
+        <xs:field xpath="@checkout"/>
+    </xs:keyref>
+    <xs:keyref name="fineHolding" refer="ldif:holding">
+        <xs:selector xpath="patrons/patron/fines/fine"/>
+        <xs:field xpath="@holding"/>
+    </xs:keyref>
+<!-- TODO: contactSelection: phone or email -->
+    <xs:keyref name="holdingBiblio" refer="ldif:biblio">
+        <xs:selector xpath="holdings/holding"/>
+        <xs:field xpath="@biblio"/>
+    </xs:keyref>
+    <xs:keyref name="holdingLocation" refer="ldif:location">
+        <xs:selector xpath="holdings/holding"/>
+        <xs:field xpath="@location"/>
+    </xs:keyref>
+    <xs:keyref name="holdingDeletedProblem" refer="ldif:problem">
+        <xs:selector xpath="holdings/holding"/>
+        <xs:field xpath="@deletedProblem"/>
+    </xs:keyref>
+    <xs:keyref name="checkoutTransitTo" refer="ldif:location">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@transitTo"/>
+    </xs:keyref>
+    <xs:keyref name="checkoutHolding" refer="ldif:holding">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@holding"/>
+    </xs:keyref>
+    <xs:keyref name="checkoutPatron" refer="ldif:patron">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@patron"/>
+    </xs:keyref>
+    <xs:keyref name="checkoutOutLocation" refer="ldif:location">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@outLocation"/>
+    </xs:keyref>
+    <xs:keyref name="checkoutReturnedLocation" refer="ldif:location">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@returnedLocation"/>
+    </xs:keyref>
+    <xs:keyref name="checkoutReserve" refer="ldif:reserve">
+        <xs:selector xpath="checkouts/checkout"/>
+        <xs:field xpath="@reserveId"/>
+    </xs:keyref>
+    <xs:keyref name="inventoryHolding" refer="ldif:holding">
+        <xs:selector xpath="inventories/inventory/inventoryHolding"/>
+        <xs:field xpath="@holdingId"/>
+    </xs:keyref>
+    <xs:keyref name="problemPatron" refer="ldif:patron">
+        <xs:selector xpath="problems/problem"/>
+        <xs:field xpath="@patron"/>
+    </xs:keyref>
+    <xs:keyref name="problemHolding" refer="ldif:holding">
+        <xs:selector xpath="problems/problem"/>
+        <xs:field xpath="@holding"/>
+    </xs:keyref>
+    <xs:keyref name="problemFine" refer="ldif:fine">
+        <xs:selector xpath="problems/problem"/>
+        <xs:field xpath="@convertedFromFineId"/>
+    </xs:keyref>
+    <xs:keyref name="booklistBiblio" refer="ldif:biblio">
+        <xs:selector xpath="booklists/booklist"/>
+        <xs:field xpath="@biblio"/>
+    </xs:keyref>
+    <xs:keyref name="booklistHolding" refer="ldif:holding">
+        <xs:selector xpath="booklists/booklist"/>
+        <xs:field xpath="@holding"/>
+    </xs:keyref>
+    <xs:keyref name="booklistPatron" refer="ldif:patron">
+        <xs:selector xpath="booklists/booklist"/>
+        <xs:field xpath="@patron"/>
+    </xs:keyref>
+</xs:element>
+
+<xs:complexType name="system">
+    <xs:annotation><xs:documentation>
+        The "system" tag describes the ILS which generated
+        the document.
+    </xs:documentation></xs:annotation>
+    <xs:attribute name="name" type="xs:token" use="required"/>
+    <xs:attribute name="vendor" type="xs:token" use="required"/>
+    <xs:attribute name="version" type="xs:token" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="userdefs">
+    <xs:annotation><xs:documentation>
+        Many systems allow a library to specify "user-defined" fields,
+        which store data the ILS doesn't have a particular slot for.
+        These can also be used, of course, to store data in LDIF which
+        LDIF doesn't have a particular slot for.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="userdef" type="ldif:userdef" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="userdef">
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="u\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:token" use="required"/>
+    <xs:attribute name="record" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="patron"/>
+                <xs:enumeration value="holding"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="type" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="string"/>
+                <xs:enumeration value="bool"/>
+                <xs:enumeration value="int"/>
+                <xs:enumeration value="date"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="locations">
+    <xs:annotation><xs:documentation>
+        If the library is a multi-building system, then each
+        building will have a corresponding location element.
+
+        If the library has only a single building, then a location
+        element is not required.
+
+        The ID of the location is used to define the "home" of
+        holdings, in checkouts to identify where items were
+        checked out and in, and in reserves to indicate where
+        a patron wishes to pick up an item
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="location" type="ldif:location" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="location">
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="l\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:token" use="required">
+        <xs:annotation><xs:documentation>
+            The official name of the location, eg:
+            Springfield Public Library
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="shortName" type="xs:token"/>
+    <xs:attribute name="abbrev" type="xs:token"/>
+    <xs:attribute name="address" type="xs:token"/>
+    <xs:attribute name="city" type="xs:token"/>
+    <xs:attribute name="state" type="xs:token"/>
+    <xs:attribute name="postalCode" type="xs:token"/>
+    <xs:attribute name="email" type="xs:token"/>
+    <xs:attribute name="phone" type="xs:token"/>
+</xs:complexType>
+
+<xs:complexType name="holidays">
+    <xs:sequence>
+        <xs:element name="days_of_week_closed" minOccurs="0">
+            <xs:complexType>
+                <xs:attribute name="sunday" type="xs:boolean" default="false"/>
+                <xs:attribute name="monday" type="xs:boolean" default="false"/>
+                <xs:attribute name="tuesday" type="xs:boolean" default="false"/>
+                <xs:attribute name="wednesday" type="xs:boolean" default="false"/>
+                <xs:attribute name="thursday" type="xs:boolean" default="false"/>
+                <xs:attribute name="friday" type="xs:boolean" default="false"/>
+                <xs:attribute name="saturday" type="xs:boolean" default="false"/>
+            </xs:complexType>
+        </xs:element>
+        <xs:element name="date" type="xs:date" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="holdingMembershipLists">
+    <xs:annotation><xs:documentation>
+        This is how "holding types" are represented in LDIF.
+        Every system is different, and in order to be generic,
+        we don't assign fixed attributes like "type", "secondary
+        type", "vendor", "fund", "shelf location", etc.
+        Instead, there's a holdingMembershipList for each of
+        the above attributes, and a holding may be a member
+        of zero or one of the holdingMemberships corresponding
+        to each list.
+
+        A holding MAY NOT be a member of more than one "type"
+        from a single list.
+
+        For example:
+<![CDATA[
+          <holdingMembershipLists>
+            <holdingMembershipList id="hml1" name="funds">
+                <holdingMembership id="hm1" name="General Fund 2011"/>
+                <holdingMembership id="hm2" name="Donations 2011"/>
+            </holdingMembershipList>
+            <holdingMembershipList id="hml2" name="vendors">
+                <holdingMembership id="hm3" name="Amazon"/>
+                <holdingMembership id="hm4" name="Ingram"/>
+            </holdingMembershipList>
+          </holdingMembershipLists>
+          <holdings>
+            <holding id="h1" status="active" barcode="12345" biblio="b23456">
+              <membership>hm1</membership>
+              <membership>hm4</membership>
+            </holding>
+            <holding id="h2" status = "active" barcode="12346" biblio="b23457">
+              <membership>hm2</membership>
+              <membership>hm3</membership>
+            </holding>
+          </holdings>
+]]>
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="holdingMembershipList" type="ldif:holdingMembershipList" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="holdingMembershipList">
+    <xs:sequence>
+        <xs:element name="holdingMembership" type="ldif:holdingMembership" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="hml\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:token" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="holdingMembership">
+    <xs:sequence>
+        <xs:element name="callPattern" type="ldif:callPattern" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="hm\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:token" use="required"/>
+    <xs:attribute name="description" type="xs:token"/>
+    <xs:attribute name="number" type="xs:token">
+        <xs:annotation><xs:documentation>
+            some systems associate a number with their
+            holding types, presenting eg "type 15" to
+            users, who may expect that numbering to
+            be preserved across a migration if possible
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="retired" type="xs:boolean" default="false">
+        <xs:annotation><xs:documentation>
+            some systems (especially for funds) allow
+            a selection to be retired.  That is, it's
+            still in the system with holdings attached,
+            but does not show up as an option when
+            cataloging.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="callPattern">
+    <xs:attribute name="pattern" type="xs:token" use="required">
+        <xs:annotation><xs:documentation>
+            a system may use a Perl regular expression (here)
+            to map call numbers to material types
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="priority" type="xs:integer" default="0">
+        <xs:annotation><xs:documentation>
+            The greater this number, the higher the priority.
+            In other words, the list of patterns is sorted in
+            priority order, and the first to match wins.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="patronMembershipLists">
+    <xs:annotation><xs:documentation>
+        This is how "patron types" are represented in LDIF.
+        See the documentation for holdingMembershipLists above.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="patronMembershipList" type="ldif:patronMembershipList" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="patronMembershipList">
+    <xs:sequence>
+        <xs:element name="patronMembership" type="ldif:patronMembership" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="pml\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:token" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="patronMembership">
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="pm\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:token" use="required"/>
+    <xs:attribute name="description" type="xs:token"/>
+    <xs:attribute name="renewalFeeCents" type="xs:nonNegativeInteger" default="0"/>
+    <xs:attribute name="membershipLengthMonths" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="membershipGraceMonths" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="number" type="xs:positiveInteger">
+        <xs:annotation><xs:documentation>
+            some systems associate a number with their
+            holding types, presenting eg "type 15" to
+            users, who may expect that numbering to
+            be preserved across a migration if possible
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="class" type="xs:positiveInteger">
+        <xs:annotation><xs:documentation>
+            some systems categorize their patron types
+            into broader groups, for example, some types
+            are in group "A", some in group "B", etc.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="patrons">
+    <xs:sequence>
+        <xs:element name="patron" type="ldif:patron" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="patron">
+    <xs:sequence>
+        <xs:element name="firstNames" type="ldif:firstNames" minOccurs="0"/>
+        <xs:element name="membership" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="addresses" type="ldif:addresses" minOccurs="0"/>
+        <xs:element name="phones" type="ldif:phones" minOccurs="0"/>
+        <xs:element name="emails" type="ldif:emails" minOccurs="0"/>
+        <xs:element name="patronNotes" type="ldif:patronNotes" minOccurs="0"/>
+        <xs:element name="vacations" type="ldif:vacations" minOccurs="0"/>
+        <xs:element name="wishList" type="ldif:wishList" minOccurs="0"/>
+        <xs:element name="reserves" type="ldif:reserves" minOccurs="0"/>
+        <xs:element name="fines" type="ldif:fines" minOccurs="0"/>
+        <xs:element name="purchaseRequests" type="ldif:purchaseRequests" minOccurs="0"/>
+        <xs:element name="photos" type="ldif:photos" minOccurs="0"/>
+        <xs:element name="userdefVal" type="ldif:userdefVal" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="passwords" type="ldif:passwords" minOccurs="0"/>
+        <xs:element name="previousBarcodes" type="ldif:previousBarcodes" minOccurs="0"/>
+        <xs:element name="reserveContactDefault" type="ldif:contactSelection" minOccurs="0"/>
+        <xs:element name="dueWarningContact" type="ldif:contactSelection" minOccurs="0"/>
+        <xs:element name="overdueContact" type="ldif:contactSelection" minOccurs="0"/>
+        <xs:element name="checkoutReceiptContact" type="ldif:contactSelection" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="p\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="status" default="active">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="active"/>
+                <xs:enumeration value="deleted"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="barcode" type="xs:token"/>
+    <xs:attribute name="expiration" type="xs:date"/>
+    <xs:attribute name="lastName" type="xs:token"/>
+    <xs:attribute name="nameSuffix" type="xs:token"/>
+    <xs:attribute name="usageCount" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="created" type="xs:date"/>
+    <xs:attribute name="edited" type="xs:date"/>
+    <xs:attribute name="familyID" type="xs:positiveInteger"/>
+    <xs:attribute name="altID" type="xs:token"/>
+    <xs:attribute name="latestActivity" type="xs:date"/>
+    <xs:attribute name="signupLocation" type="xs:IDREF"/>
+    <xs:attribute name="preferredLocation" type="xs:IDREF"/>
+    <xs:attribute name="salutation" type="xs:token"/>
+    <xs:attribute name="circHistoryDays" type="xs:nonNegativeInteger">
+        <xs:annotation><xs:documentation>
+            This is how many days the patron has chosen to keep circ
+            history.  Absent implies no setting.  A value of 0 (zero)
+            implies "keep forever".  Otherwise the number of days to
+            keep history.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="addresses">
+    <xs:sequence>
+        <xs:element name="address" type="ldif:address" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="address">
+    <xs:sequence>
+        <xs:element name="line" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="locality" type="xs:token"/>
+    <xs:attribute name="country">
+        <xs:annotation><xs:documentation>
+            This is the two-letter country code specified in ISO-3166.
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:minLength value="2"/>
+                <xs:maxLength value="2"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="countryDivision">
+        <xs:annotation><xs:documentation>
+            This is the ISO 3166-2 Sub-division/State Code.
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:minLength value="1"/>
+                <xs:maxLength value="3"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="postalCode" type="xs:token"/>
+    <xs:attribute name="mailing" type="xs:boolean" default="0"/>
+    <xs:attribute name="note" type="xs:token"/>
+</xs:complexType>
+
+<xs:complexType name="firstNames">
+    <xs:annotation><xs:documentation>
+        Some libraries use "family accounts", where multiple
+        members of a family share one card.  For this reason,
+        LDIF allows multiple firstNames per account.  Most
+        libraries will not use this, and will have exactly
+        one firstName per patron.
+
+        It is possible to have a patronMembershipList that
+        applies at the firstName level, if a library does
+        use multiple firstNames per patron.  It is expected
+        that any membershipList that applies at the firstName
+        level will NOT apply at the patron level.  Behavior
+        in case of conflicts is undefined.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="firstName" type="ldif:firstName" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="firstName">
+    <xs:sequence>
+        <xs:element name="membership" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:token" use="required"/>
+    <xs:attribute name="middleName" type="xs:token"/>
+    <xs:attribute name="preferredName" type="xs:token"/>
+    <xs:attribute name="birthdate" type="xs:date"/>
+</xs:complexType>
+
+<xs:complexType name="phones">
+    <xs:sequence>
+        <xs:element name="phone" type="ldif:phone" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="phone">
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="ph\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="countryCode" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:positiveInteger">
+                <xs:minInclusive value="1"/>
+                <xs:maxInclusive value="999"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="areaCode">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:pattern value="[0-9]+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="number" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:pattern value="[0-9]+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="extension">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:pattern value="[0-9]+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="carrier" type="xs:token"/>
+    <xs:attribute name="sms_email">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <!-- TODO: use some kind of macro to prevent duplicating this in email -->
+                <xs:pattern value="([\.a-zA-Z0-9!#$%&amp;'*+/=?\^`{|}~\-_])+@([a-zA-Z0-9-])+(([a-zA-Z0-9-])*\.([a-zA-Z0-9-])+)+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="type">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="home"/>
+                <xs:enumeration value="work"/>
+                <xs:enumeration value="mobile"/>
+                <xs:enumeration value="other"/>
+                <xs:enumeration value=""/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="note" type="xs:token"/>
+</xs:complexType>
+
+<xs:complexType name="emails">
+    <xs:sequence>
+        <xs:element name="email" type="ldif:email" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="email">
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="em\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="address" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <!-- TODO: use some kind of macro to prevent duplicating this in sms_email -->
+                <xs:pattern value="([\.a-zA-Z0-9!#$%&amp;'*+/=?\^`{|}~\-_])+@([a-zA-Z0-9-])+(([a-zA-Z0-9-])*\.([a-zA-Z0-9-])+)+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="note" type="xs:token"/>
+</xs:complexType>
+
+<xs:complexType name="patronNotes">
+    <xs:sequence>
+        <xs:element name="patronNote" type="ldif:patronNote" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="patronNote">
+    <xs:attribute name="message" type="xs:token"/>
+    <xs:attribute name="dateAdded" type="xs:date"/>
+    <xs:attribute name="dateCleared" type="xs:date"/>
+    <xs:attribute name="lastUpdated" type="xs:dateTime"/>
+    <xs:attribute name="signature" type="xs:token"/>
+    <xs:attribute name="active" type="xs:boolean" use="required"/>
+    <xs:attribute name="sensitive" type="xs:boolean"/>
+    <xs:attribute name="urgent" type="xs:boolean"/>
+</xs:complexType>
+
+<xs:complexType name="vacations">
+    <xs:annotation><xs:documentation>
+        If patrons have indicated that they are unavailable
+        to receive reserved items on particular days, that
+        information can be stored here.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="vacation" type="ldif:vacation" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="vacation">
+    <xs:attribute name="date" type="xs:date" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="wishList">
+    <xs:annotation><xs:documentation>
+        Some systems allow patrons to put items on a "wish list",
+        for items that they are not reserving, but which they
+        may wish to refer to later.  This can be either at the
+        biblio or holding level (but not both).
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="wishListItem" type="ldif:wishListItem" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="reserves">
+    <xs:sequence>
+        <xs:element name="reserve" type="ldif:reserve" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="reserve">
+    <xs:sequence>
+        <xs:element name="contact" type="ldif:contactSelection" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="r\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="status" use="required">
+        <xs:annotation><xs:documentation>
+            "pending"    - the patron wants the item
+            "completed"  - the patron checked out the item
+            "deleted"    - the reserve was deleted before any
+                           fulfillment action was taken on it
+            "expired"    - the item waited too long for the
+                          patron to pick it up, and it was
+                          returned to circulation without
+                          having been checked out to the
+                          reserving patron
+            "preempted"  - the patron went and found the item
+                           on the shelf before it was pulled
+                           to wait for him
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="pending"/>
+                <xs:enumeration value="completed"/>
+                <xs:enumeration value="deleted"/>
+                <xs:enumeration value="expired"/>
+                <xs:enumeration value="preempted"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="biblio" type="xs:IDREF">
+        <xs:annotation><xs:documentation>
+            Reserves can be either at the bibliographic or the
+            holding level.  Exactly one of "biblio" and "holding"
+            should be specified.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="holding" type="xs:IDREF"/>
+    <xs:attribute name="placed" type="xs:dateTime"/>
+    <xs:attribute name="resolved" type="xs:dateTime"/>
+    <xs:attribute name="lastDay" type="xs:date"/>
+    <xs:attribute name="contacted" type="xs:dateTime"/>
+    <xs:attribute name="pickupLocation" type="xs:IDREF"/>
+</xs:complexType>
+
+<xs:complexType name="wishListItem">
+    <xs:attribute name="biblio" type="xs:IDREF"/>
+    <xs:attribute name="holding" type="xs:IDREF"/>
+    <xs:attribute name="date" type="xs:dateTime"/>
+</xs:complexType>
+
+<xs:complexType name="fines">
+    <xs:sequence>
+        <xs:element name="fine" type="ldif:fine" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="fine">
+    <xs:annotation><xs:documentation>
+        The dates on which notification(s) for this infraction
+        occurred can be represented here.  This allows for
+        proper dovetailing of notifications when transitioning
+        between systems.
+        
+        Some systems don't create a "fine" until the item has
+        been returned.  Any overdue which has had a notification
+        should be a "fine" in LDIF (presumably with $0 amounts)
+        so that its notification dates can be represented.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="notified" type="xs:date" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="f\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="status" use="required">
+        <xs:annotation><xs:documentation>
+            "open"      - the difference between amountCents and
+                          amountPaidCents is currently being charged
+            "paid"      - the fine is no longer being charged
+            "forgiven"  - the fine is no longer being charged, and
+                          the difference between amountCents and
+                          amountPaidCents is considered "forgiven"
+            "converted" - the fine has been superceded by an
+                          automatically created "problem"
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="open"/>
+                <xs:enumeration value="paid"/>
+                <xs:enumeration value="forgiven"/>
+                <xs:enumeration value="converted"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="checkout" type="xs:IDREF">
+        <xs:annotation><xs:documentation>
+            A fine should refer to a checkout or to a holding
+            (but not both, since a checkout implies a holding).
+            Referring to a checkout is preferred.
+            
+            "returned" and "due" only apply if not referring
+            to a checkout.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="holding" type="xs:IDREF"/>
+    <xs:attribute name="amountCents" type="xs:nonNegativeInteger" use="required"/>
+    <xs:attribute name="amountPaidCents" type="xs:nonNegativeInteger" default="0"/>
+    <xs:attribute name="note" type="xs:token"/>
+    <xs:attribute name="updated" type="xs:dateTime"/>
+    <xs:attribute name="returned" type="xs:date"/>
+    <xs:attribute name="due" type="xs:dateTime"/>
+    <xs:attribute name="continuation" default="completed">
+        <xs:annotation><xs:documentation>
+            When "inprogress", the fine should continue to accumulate,
+            according to the current rules.
+            When "completed", the fine should not accumulate further,
+            regardless of the current rules.
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="completed"/>
+                <xs:enumeration value="inprogress"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="purchaseRequests">
+    <xs:annotation><xs:documentation>
+        Purchase / ILL requests coming in from patrons
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="purchaseRequest" type="ldif:purchaseRequest" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="purchaseRequest">
+    <xs:attribute name="title" type="xs:token" use="required"/>
+    <xs:attribute name="placed" type="xs:date" use="required"/>
+    <xs:attribute name="author" type="xs:token"/>
+    <xs:attribute name="note" type="xs:token"/>
+    <xs:attribute name="updated" type="xs:dateTime"/>
+    <xs:attribute name="resolved" type="xs:boolean" default="0"/>
+</xs:complexType>
+
+<xs:complexType name="photos">
+    <xs:annotation><xs:documentation>
+        In case any systems which support more than one photo
+        per patron exist, this supports any number of photos.
+
+        At this point, values for "mime" should probably always
+        be "image/jpeg".
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="photo" type="ldif:photo" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="photo">
+    <xs:attribute name="mime" type="xs:token" default="image/jpeg"/>
+    <xs:attribute name="data" type="xs:base64Binary" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="userdefVal">
+    <xs:annotation><xs:documentation>
+        User defined values refer to the field (called "uId", the "id"
+        value of a "userdef" tag) to which they belong.
+        One patron or holding may have at most one userdef value
+        per field.  Enforcement of the data type is not done (at this
+        time) in the schema, but values must conform to the field's
+        declared data type.
+    </xs:documentation></xs:annotation>
+    <xs:attribute name="uId" type="xs:IDREF" use="required"/>
+    <xs:attribute name="value" type="xs:token" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="previousBarcodes">
+    <xs:sequence>
+        <xs:element name="previousBarcode" type="ldif:previousBarcode" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="previousBarcode">
+    <xs:annotation><xs:documentation>
+    </xs:documentation></xs:annotation>
+    <xs:attribute name="barcode" type="xs:token" use="required"/>
+    <xs:attribute name="lostDate" type="xs:date"/>
+</xs:complexType>
+
+<xs:complexType name="passwords">
+    <xs:sequence>
+        <xs:element name="password" type="ldif:password"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="password">
+    <xs:annotation><xs:documentation>
+    </xs:documentation></xs:annotation>
+    <xs:attribute name="hashType" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="plaintext"/>
+                <xs:enumeration value="bcrypt"/>
+                <xs:enumeration value="md5"/>
+                <xs:enumeration value="sha1"/>
+                <xs:enumeration value="sha256"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="cost" type="xs:positiveInteger"/>
+    <xs:attribute name="value" type="xs:base64Binary" use="required"/>
+    <xs:attribute name="salt" type="xs:base64Binary"/>
+</xs:complexType>
+
+<xs:complexType name="contactSelection">
+    <xs:annotation><xs:documentation>
+        Expresses a preference for a particular contact method.
+        Refers to either a phone number or email by IDREF.
+        When referring to a phone number, the SMS modifier may be
+        enabled.
+    </xs:documentation></xs:annotation>
+    <xs:attribute name="contact" type="xs:IDREF" use="required"/>
+    <xs:attribute name="sms" type="xs:boolean" default="0"/>
+</xs:complexType>
+
+<xs:complexType name="authorities">
+    <xs:annotation><xs:documentation>
+        Authority records, conforming to the LoC's XML Schema
+        for MARC.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element ref="marc:record" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="biblios">
+    <xs:sequence>
+        <xs:element name="biblio" type="ldif:biblio" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="biblio">
+    <xs:annotation><xs:documentation>
+        Just like authorities, the XML for biblios is MARC
+        in XML form, conforming to the LoC's Schema.
+        
+        This XML may be generated any way the exporting system 
+        wishes.  One suggestion is Galen Charlton's
+        MARC::File::XML, available on CPAN.  Its XML output
+        works inside LDIF (with a little tweaking).
+        http://search.cpan.org/~gmcharlt/MARC-XML-0.93/lib/MARC/File/XML.pm
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element ref="marc:record"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="b\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="status" default="active">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="active"/>
+                <xs:enumeration value="pending"/>
+                <xs:enumeration value="deleted"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="added" type="xs:date"/>
+    <xs:attribute name="edited" type="xs:dateTime"/>
+    <xs:attribute name="deleted" type="xs:date"/>
+    <xs:attribute name="usageCount" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="temporary" type="xs:boolean" default="false"/>
+</xs:complexType>
+
+<xs:complexType name="holdings">
+    <xs:sequence>
+        <xs:element name="holding" type="ldif:holding" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="holdingNotes">
+    <xs:sequence>
+        <xs:element name="holdingNote" type="ldif:holdingNote" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="holdingNote">
+    <xs:sequence>
+        <xs:element name="alertOnEvent" minOccurs="0">
+            <xs:complexType>
+                <xs:attribute name="checkin" type="xs:boolean" default="false"/>
+                <xs:attribute name="checkout" type="xs:boolean" default="false"/>
+                <xs:attribute name="selfcheck" type="xs:boolean" default="false"/>
+            </xs:complexType>
+        </xs:element>
+    </xs:sequence>
+    <xs:attribute name="note" type="xs:token" use="required"/>
+    <xs:attribute name="created" type="xs:dateTime"/>
+    <xs:attribute name="signature" type="xs:token"/>
+    <xs:attribute name="active" type="xs:boolean" use="required"/>
+    <xs:attribute name="urgent" type="xs:boolean"/>
+    <xs:attribute name="public" type="xs:boolean"/>
+</xs:complexType>
+
+<xs:complexType name="holding">
+    <xs:sequence>
+        <xs:element name="membership" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="holdingNotes" type="ldif:holdingNotes" minOccurs="0"/>
+        <xs:element name="userdefVal" type="ldif:userdefVal" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="h\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="status" default="active">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="active"/>
+                <xs:enumeration value="pending"/>
+                <xs:enumeration value="deleted"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="barcode" type="xs:token"/>
+    <xs:attribute name="copy" type="xs:token"/>
+    <xs:attribute name="volume" type="xs:token"/>
+    <xs:attribute name="issue" type="xs:token"/>
+    <xs:attribute name="biblio" type="xs:IDREF" use="required"/>
+    <xs:attribute name="call" type="xs:token"/>
+    <xs:attribute name="callSuffix" type="xs:token"/>
+    <xs:attribute name="added" type="xs:date"/>
+    <xs:attribute name="edited" type="xs:date"/>
+    <xs:attribute name="priceCents" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="priceListCents" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="usageCount" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="lost" type="xs:date"/>
+    <xs:attribute name="location" type="xs:IDREF"/>
+    <xs:attribute name="deleted" type="xs:date"/>
+    <xs:attribute name="deletedType">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="lost"/>
+                <xs:enumeration value="weeded"/>
+                <xs:enumeration value="resolved"/>
+                <xs:enumeration value="inventory"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="deletedProblem" type="xs:IDREF">
+        <xs:annotation><xs:documentation>
+            A deleted holding may refer to the "problem" which caused
+            its deletion.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="checkouts">
+    <xs:sequence>
+        <xs:element name="checkout" type="ldif:checkout" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="renewals">
+    <xs:sequence>
+        <xs:element name="renewal" type="ldif:renewal" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="renewal">
+    <xs:attribute name="date" type="xs:date"/>
+    <xs:attribute name="patronDriven" type="xs:boolean" default="0">
+        <xs:annotation><xs:documentation>
+            Some libraries record whether renewals happened inside
+            vs outside the library, and whether they happened as
+            a result of staff or patron action.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="outsideLibrary" type="xs:boolean" default="0"/>
+    <xs:attribute name="previousDue" type="xs:date"/>
+</xs:complexType>
+
+<xs:complexType name="checkout">
+    <xs:sequence>
+          <xs:annotation><xs:documentation>
+            The ID of the reserve with which this checkout
+            is associated.
+          </xs:documentation></xs:annotation>
+        <xs:element name="renewals" type="ldif:renewals" minOccurs="0"/>
+        <xs:element name="membership" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded">
+            <xs:annotation><xs:documentation>
+                Some systems store the patron and material types,
+                etc, that were in effect at the time of the checkout
+            </xs:documentation></xs:annotation>
+        </xs:element>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="c\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="status" default="in">
+        <xs:annotation><xs:documentation>
+            Whether the item has been returned or not.
+            The default is for items to have been returned,
+            since (including historical checkouts) most checkouts
+            have been returned.
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="in"/>
+                <xs:enumeration value="out"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="type" use="required">
+        <xs:annotation><xs:documentation>
+            "normal"     - a normal checkout out to a patron
+            "reserve"    - the item is/was checked out to
+                           the "reserve shelf", waiting for
+                           a particular patron to pick it up
+            "in-library" - the item was checked in without
+                           having been checked out
+            "transit"    - transit between branches
+            "quarantine" - item is in post-checkout quarantine
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="normal"/>
+                <xs:enumeration value="reserve"/>
+                <xs:enumeration value="in-library"/>
+                <xs:enumeration value="transit"/>
+                <xs:enumeration value="quarantine"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+
+    <xs:attribute name="transitTo" type="xs:IDREF">
+        <xs:annotation><xs:documentation>
+            This is the location ID of the destination branch.
+            It only makes sense for checkouts of type "transit".
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+
+    <xs:attribute name="holding" type="xs:IDREF"/>
+    <xs:attribute name="patron" type="xs:IDREF"/>
+    <xs:attribute name="out" type="xs:dateTime"/>
+    <xs:attribute name="due" type="xs:dateTime"/>
+    <xs:attribute name="returned" type="xs:dateTime"/>
+    <xs:attribute name="outLocation" type="xs:IDREF"/>
+    <xs:attribute name="returnedLocation" type="xs:IDREF"/>
+    <xs:attribute name="reserveId" type="xs:IDREF"/>
+    <xs:attribute name="selfCheck" type="xs:boolean" default="0"/>
+</xs:complexType>
+
+<xs:complexType name="inventories">
+    <xs:annotation><xs:documentation>
+        In-progress inventories can be represented in LDIF.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="inventory" type="ldif:inventory" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="inventory">
+    <xs:annotation><xs:documentation>
+        Each inventory encompasses a subset of the collection.
+        This can be specified by holdingMembership, a range
+        of call numbers, both, or neither (for the whole
+        collection).
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="holdingMembership" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="callRange" type="ldif:callRange" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="inventoryHolding" type="ldif:inventoryHolding" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="dateStarted" type="xs:date"/>
+    <xs:attribute name="dateItemsMarkedLost" type="xs:date"/>
+    <xs:attribute name="dateItemsDeleted" type="xs:date"/>
+</xs:complexType>
+
+<xs:complexType name="callRange">
+    <xs:attribute name="start" type="xs:token"/>
+    <xs:attribute name="end" type="xs:token"/>
+</xs:complexType>
+
+<xs:complexType name="inventoryHolding">
+    <xs:attribute name="holdingId" type="xs:IDREF" use="required"/>
+    <xs:attribute name="unexpected" type="xs:boolean" default="0"/>
+    <xs:attribute name="markedLost" type="xs:boolean" default="0"/>
+    <xs:attribute name="deleted" type="xs:boolean" default="0"/>
+    <xs:attribute name="lastSeen" type="xs:dateTime"/>
+</xs:complexType>
+
+<xs:complexType name="problems">
+    <xs:annotation><xs:documentation>
+        Problems are issues that block circulation, either
+        for a patron, a holding, or both.
+        
+        For example, if an item is damaged, there is a problem
+        of type "damaged" that refers to the holding.  If there
+        is a patron to blame for the damage, then that problem
+        also refers to a patron.
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="problem" type="ldif:problem" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="problemNotes">
+    <xs:sequence>
+        <xs:element name="problemNote" type="ldif:problemNote" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="problemNote">
+    <xs:attribute name="time" type="xs:dateTime"/>
+    <xs:attribute name="signature" type="xs:token"/>
+    <xs:attribute name="note" type="xs:token" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="problemHoldingMovement">
+    <xs:annotation><xs:documentation>
+        problemHoldingMovement contains problemHoldingLocation
+        elements, which serve to track the progression (or
+        simply the current location) of the item.
+        
+        Examples of "location" are things like "missing", 
+        "technical services", "circulation desk".  Anywhere
+        that problem items sit while being dealt with can
+        be a problem location.
+        
+        Unfortunately there doesn't seem to be an obvious
+        way to standardize this.
+        
+        Absence of a problem location probably should imply
+        "missing", but it's better to specifically indicate
+        that.  (Of course that only applies when there's a
+        holding attached to the problem.)
+    </xs:documentation></xs:annotation>
+    <xs:sequence>
+        <xs:element name="problemHoldingLocation" type="ldif:problemHoldingLocation" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="problemHoldingLocation">
+    <xs:attribute name="time" type="xs:dateTime"/>
+    <xs:attribute name="signature" type="xs:token"/>
+    <xs:attribute name="location" type="xs:token" use="required"/>
+</xs:complexType>
+
+<xs:complexType name="problem">
+    <xs:sequence>
+        <xs:element name="problemNotes" type="ldif:problemNotes" minOccurs="0"/>
+        <xs:element name="problemHoldingMovement" type="ldif:problemHoldingMovement" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="pr\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="type" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="lost"/>
+                <xs:enumeration value="damaged"/>
+                <xs:enumeration value="incomplete"/>
+                <xs:enumeration value="membership"/>
+                <xs:enumeration value="other"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="amountChargedCents" type="xs:nonNegativeInteger" default="0"/>
+    <xs:attribute name="amountPaidCents" type="xs:nonNegativeInteger" default="0"/>
+    <xs:attribute name="created" type="xs:dateTime"/>
+    <xs:attribute name="statusPatron">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="open"/>
+                <xs:enumeration value="resolved"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="statusHolding">
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="open"/>
+                <xs:enumeration value="resolved"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="patron" type="xs:IDREF"/>
+    <xs:attribute name="holding" type="xs:IDREF"/>
+    <xs:attribute name="timePatronResolved" type="xs:dateTime"/>
+    <xs:attribute name="timeHoldingResolved" type="xs:dateTime"/>
+    <xs:attribute name="updated" type="xs:dateTime"/>
+    <xs:attribute name="convertedFromFineId" type="xs:IDREF"/>
+    <xs:attribute name="associatedProblem" type="xs:IDREF">
+        <xs:annotation><xs:documentation>
+            Most libraries which charge a processing fee for Lost items
+            do so by adding the amount of the fee to the Lost problem.
+            However, some want to use a separate problem for the processing
+            fee.  This attribute may appear in Lost problems and points
+            to the associated processing problem.
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="booklists">
+    <xs:sequence>
+        <xs:element name="booklist" type="ldif:booklist" maxOccurs="unbounded"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="booklist">
+    <xs:annotation><xs:documentation>
+        This is intended to store information both about lists
+        that the library wants to be public (eg, "staff picks",
+        "Books for babies", whatever) as well as patrons' individual
+        "wish lists".
+    </xs:documentation></xs:annotation>
+
+    <xs:sequence>
+        <xs:element name="biblio" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded">
+            <xs:annotation><xs:documentation>
+                The biblios which are on the list.
+            </xs:documentation></xs:annotation>
+        </xs:element>
+        <xs:element name="holding" type="xs:IDREF" minOccurs="0" maxOccurs="unbounded">
+            <xs:annotation><xs:documentation>
+                The holdings which are on the list.
+            </xs:documentation></xs:annotation>
+        </xs:element>
+    </xs:sequence>
+
+    <xs:attribute name="id" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:ID">
+                <xs:pattern value="bl\d+"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="name" type="xs:token">
+        <xs:annotation><xs:documentation>
+            The name of the list (if applicable).
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="description" type="xs:token">
+        <xs:annotation><xs:documentation>
+            A description of the list (if applicable).
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="patron" type="xs:IDREF">
+        <xs:annotation><xs:documentation>
+            The patron whose list this is.  If this attribute is
+            omitted, then this is a public, library-wide list
+            (and a "name" attribute really is required).
+        </xs:documentation></xs:annotation>
+    </xs:attribute>
+</xs:complexType>
+
+</xs:schema>

@@ -1,0 +1,7 @@
+.DS_Store
+.env
+*.swp
+*.csv
+*.ldif
+*.json
+data/*.json
